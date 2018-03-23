@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:tx="http://www.springframework.org/schema/tx"
-	xmlns:aop="http://www.springframework.org/schema/aop"
-	xsi:schemaLocation="  
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
 		   http://www.springframework.org/schema/tx
            http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
            http://www.springframework.org/schema/beans  
@@ -12,64 +13,84 @@
            http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
            http://www.springframework.org/schema/context  
            http://www.springframework.org/schema/context/spring-context-3.0.xsd">
-     
-     <!-- 引入jdbc配置文件 -->  
-     <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+
+    <!-- 引入jdbc配置文件 -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="locations">
             <list>
-               <value>classpath:properties/*.properties</value>
+                <value>classpath:properties/*.properties</value>
                 <!--要是有多个配置文件，只需在这里继续添加即可 -->
             </list>
         </property>
     </bean>
-    
-    
 
-	<!-- 配置数据源 -->
-	<bean id="dataSource"
-		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-		<!-- 不使用properties来配置 -->
-		<!-- <property name="driverClassName" value="com.mysql.jdbc.Driver" /> 
-			<property name="url" value="jdbc:mysql://localhost:3306/learning" /> 
-			<property name="username" value="root" /> 
-			<property name="password" value="christmas258@" /> -->
-	   <!-- 使用properties来配置 -->
-		<property name="driverClassName">
-			<value>${jdbc_driverClassName}</value>
-		</property>
-		<property name="url">
-			<value>${jdbc_url}</value>
-		</property>
-		<property name="username">
-			<value>${jdbc_username}</value>
-		</property>
-		<property name="password">
-			<value>${jdbc_password}</value>
-		</property>
-	</bean>
-	
-	<bean id="appTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-	  <property name="dataSource" ref="dataSource" />
-	</bean>
-	
-	<tx:annotation-driven proxy-target-class="false" transaction-manager="appTransactionManager" />
-	
-	<!-- 自动扫描了所有的XxxxMapper.xml对应的mapper接口文件，这样就不用一个一个手动配置Mpper的映射了，只要Mapper接口类和Mapper映射文件对应起来就可以了。 -->
-	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-		<property name="basePackage"
-			value="com.lh.dao" />
-	</bean>
+
+    <!-- 配置数据源 -->
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <!-- 不使用properties来配置 -->
+        <!-- <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+            <property name="url" value="jdbc:mysql://localhost:3306/learning" />
+            <property name="username" value="root" />
+            <property name="password" value="christmas258@" /> -->
+        <!-- 使用properties来配置 -->
+        <property name="driverClassName">
+            <value>${jdbc_driverClassName}</value>
+        </property>
+        <property name="url">
+            <value>${jdbc_url}</value>
+        </property>
+        <property name="username">
+            <value>${jdbc_username}</value>
+        </property>
+        <property name="password">
+            <value>${jdbc_password}</value>
+        </property>
+    </bean>
+
+    <bean id="appTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+
+    <tx:advice id="txAdvice" transaction-manager="appTransactionManager">
+        <tx:attributes>
+            <tx:method name="publish*"/>
+            <tx:method name="save*"/>
+            <tx:method name="add*"/>
+            <tx:method name="update*"/>
+            <tx:method name="insert*"/>
+            <tx:method name="create*"/>
+            <tx:method name="del*"/>
+            <tx:method name="load*"/>
+            <tx:method name="init*"/>
+
+
+            <tx:method name="*" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+    <!-- AOP配置-->
+    <aop:config>
+        <aop:pointcut id="myPointcut"
+                      expression="execution(public * com.lh.service.*(..))"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="myPointcut"/>
+    </aop:config>
+
+    <!-- 自动扫描了所有的XxxxMapper.xml对应的mapper接口文件，这样就不用一个一个手动配置Mpper的映射了，只要Mapper接口类和Mapper映射文件对应起来就可以了。 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.lh.dao"/>
+    </bean>
 
     <!-- 配置Mybatis的文件 ，mapperLocations配置**Mapper.xml文件位置，configLocation配置mybatis-config文件位置-->
-	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
-		<property name="dataSource" ref="dataSource" />
-        <property name="mapperLocations" value="classpath:mapper/*.xml"/>  
-		<property name="configLocation" value="classpath:mybatis/mybatis-config.xml" />
-		<!-- <property name="typeAliasesPackage" value="com.tiantian.ckeditor.model" 
-			/> -->
-	</bean>
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+        <property name="configLocation" value="classpath:mybatis/mybatis-config.xml"/>
+        <!-- <property name="typeAliasesPackage" value="com.tiantian.ckeditor.model"
+            /> -->
+    </bean>
 
-	<!-- 自动扫描注解的bean -->
-	<context:component-scan base-package="com.lh.service" />
+    <!-- 自动扫描注解的bean -->
+    <context:component-scan base-package="com.lh.service"/>
 
 </beans>
